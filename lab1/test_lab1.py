@@ -9,10 +9,15 @@
 """
 
 import sys
+from pathlib import Path
+
 sys.path.insert(0, __file__.rsplit('\\', 1)[0])
 
 from transition_system import TransitionSystem, State
 from peterson_example import create_simplified_peterson, PetersonTS, verify_mutual_exclusion
+
+# 可视化输出目录
+OUTPUT_DIR = Path(__file__).parent.parent / "output" / "visualization"
 
 
 def test_basic_state_management():
@@ -214,6 +219,12 @@ def test_peterson_simplified():
     result = verify_mutual_exclusion(ts)
     assert result, "简化版 Peterson 算法应满足互斥性质"
     
+    # 生成可视化文件
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    ts.save_dot(OUTPUT_DIR / "test_peterson_simplified.dot")
+    ts.visualize_html(OUTPUT_DIR / "test_peterson_simplified.html")
+    print(f"  可视化文件已保存到 {OUTPUT_DIR}")
+    
     print("  ✓ 可达状态数与手工计算一致")
     print("  ✓ 互斥性质验证通过")
 
@@ -235,6 +246,12 @@ def test_peterson_full():
     # 验证互斥性质
     result = verify_mutual_exclusion(ts)
     assert result, "完整版 Peterson 算法应满足互斥性质"
+    
+    # 生成可视化文件
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    ts.save_dot(OUTPUT_DIR / "test_peterson_full.dot")
+    ts.visualize_html(OUTPUT_DIR / "test_peterson_full.html")
+    print(f"  可视化文件已保存到 {OUTPUT_DIR}")
     
     print("  ✓ 完整模型构建成功")
     print("  ✓ 互斥性质验证通过")

@@ -29,7 +29,13 @@ while True:
 - flag1: True 或 False
 """
 
+import sys
+from pathlib import Path
+
 from transition_system import TransitionSystem, State
+
+# 可视化输出目录
+OUTPUT_DIR = Path(__file__).parent.parent / "output" / "visualization"
 
 
 class PetersonTS:
@@ -257,6 +263,14 @@ if __name__ == "__main__":
     # 验证互斥性质
     verify_mutual_exclusion(ts)
     
+    # 生成可视化文件
+    print("\n生成可视化文件...")
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    ts.save_dot(OUTPUT_DIR / "peterson_simplified.dot")
+    ts.visualize_html(OUTPUT_DIR / "peterson_simplified.html")
+    print(f"  - {OUTPUT_DIR / 'peterson_simplified.dot'}")
+    print(f"  - {OUTPUT_DIR / 'peterson_simplified.html'}")
+    
     # 使用完整模型
     print("\n" + "=" * 60)
     print("【完整 Peterson 模型】")
@@ -275,3 +289,11 @@ if __name__ == "__main__":
     
     # 验证互斥性质
     verify_mutual_exclusion(ts_full)
+    
+    # 生成可视化文件
+    print("\n生成可视化文件...")
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    ts_full.save_dot(OUTPUT_DIR / "peterson_full.dot")
+    ts_full.visualize_html(OUTPUT_DIR / "peterson_full.html")
+    print(f"  - {OUTPUT_DIR / 'peterson_full.dot'}")
+    print(f"  - {OUTPUT_DIR / 'peterson_full.html'}")

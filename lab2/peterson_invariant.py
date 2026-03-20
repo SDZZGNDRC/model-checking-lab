@@ -9,12 +9,17 @@
 """
 
 import sys
+from pathlib import Path
+
 sys.path.insert(0, __file__.rsplit('\\', 1)[0] + '\\..\\lab1')
 
 from transition_system import TransitionSystem
 from propositional_formula import parse_formula
 from invariant_checker import InvariantChecker, InvariantCheckResult, check_invariant
 from peterson_example import create_simplified_peterson, PetersonTS
+
+# 可视化输出目录
+OUTPUT_DIR = Path(__file__).parent.parent / "output" / "visualization"
 
 
 def verify_mutual_exclusion(ts: TransitionSystem, verbose: bool = True) -> InvariantCheckResult:
@@ -175,6 +180,14 @@ def demonstrate_counterexample():
     # 验证互斥性质
     result = verify_mutual_exclusion(ts, verbose=True)
     
+    # 生成可视化文件
+    print("\n生成可视化文件...")
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    ts.save_dot(OUTPUT_DIR / "lab2_buggy_peterson.dot")
+    ts.visualize_html(OUTPUT_DIR / "lab2_buggy_peterson.html")
+    print(f"  - {OUTPUT_DIR / 'lab2_buggy_peterson.dot'}")
+    print(f"  - {OUTPUT_DIR / 'lab2_buggy_peterson.html'}")
+    
     return result
 
 
@@ -275,6 +288,11 @@ def run_all_demonstrations():
     result1 = verify_mutual_exclusion(ts_simplified)
     assert result1.holds, "简化版模型应满足互斥性质"
     
+    # 生成可视化
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    ts_simplified.save_dot(OUTPUT_DIR / "lab2_peterson_simplified.dot")
+    ts_simplified.visualize_html(OUTPUT_DIR / "lab2_peterson_simplified.html")
+    
     # 3. 验证完整版 Peterson 模型
     print("\n" + "=" * 60)
     print("完整版 Peterson 模型验证")
@@ -287,6 +305,10 @@ def run_all_demonstrations():
     print(f"可达迁移数: {stats['reachable_transitions']}")
     result2 = verify_mutual_exclusion(ts_full)
     assert result2.holds, "完整版模型应满足互斥性质"
+    
+    # 生成可视化
+    ts_full.save_dot(OUTPUT_DIR / "lab2_peterson_full.dot")
+    ts_full.visualize_html(OUTPUT_DIR / "lab2_peterson_full.html")
     
     # 4. 验证其他性质
     verify_single_process_in_critical(ts_simplified)

@@ -13,6 +13,8 @@
 """
 
 import sys
+from pathlib import Path
+
 sys.path.insert(0, __file__.rsplit('\\', 1)[0] + '\\..\\lab1')
 
 from transition_system import TransitionSystem, State
@@ -22,6 +24,9 @@ from safety_verifier import (
     build_bad_prefix_nfa_red_must_follow_yellow,
     build_bad_prefix_nfa_no_consecutive_red
 )
+
+# 可视化输出目录
+OUTPUT_DIR = Path(__file__).parent.parent / "output" / "visualization"
 
 
 def create_traffic_light_ts() -> TransitionSystem:
@@ -144,12 +149,20 @@ def demo_traffic_light_verification():
     print("实验三：正则安全属性验证 - 交通灯示例")
     print("=" * 70)
     
+    # 创建输出目录
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    
     # ====== 测试 1：正确的交通灯 ======
     print("\n【测试 1】正确的交通灯模型")
     print("-" * 50)
     
     ts_correct = create_traffic_light_ts_correct()
     ts_correct.print_reachable_graph()
+    
+    # 生成可视化
+    ts_correct.save_dot(OUTPUT_DIR / "lab3_traffic_correct.dot")
+    ts_correct.visualize_html(OUTPUT_DIR / "lab3_traffic_correct.html")
+    print(f"\n可视化文件已保存到 {OUTPUT_DIR}")
     
     # 验证属性：red 后必须紧跟 yellow
     print("\n验证属性：'red 后必须紧跟 yellow'")
@@ -172,6 +185,10 @@ def demo_traffic_light_verification():
     
     ts_violation = create_traffic_light_ts_violation()
     ts_violation.print_reachable_graph()
+    
+    # 生成可视化
+    ts_violation.save_dot(OUTPUT_DIR / "lab3_traffic_violation.dot")
+    ts_violation.visualize_html(OUTPUT_DIR / "lab3_traffic_violation.html")
     
     print("\n验证属性：'red 后必须紧跟 yellow'")
     
@@ -239,6 +256,10 @@ def demo_traffic_light_verification():
     
     ts_extended = create_extended_traffic_light_ts()
     ts_extended.print_reachable_graph()
+    
+    # 生成可视化
+    ts_extended.save_dot(OUTPUT_DIR / "lab3_traffic_extended.dot")
+    ts_extended.visualize_html(OUTPUT_DIR / "lab3_traffic_extended.html")
     
     print("\n验证属性：'red 后必须紧跟 yellow'")
     verifier3 = SafetyVerifier(ts_extended)
