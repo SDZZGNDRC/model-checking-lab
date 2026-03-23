@@ -12,6 +12,21 @@
 from typing import Set, Dict, List, Tuple, Optional, FrozenSet
 from dataclasses import dataclass, field
 from collections import deque
+import os
+import webbrowser
+
+# 可选依赖导入
+try:
+    import matplotlib.pyplot as plt
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
+
+try:
+    import networkx as nx
+    NETWORKX_AVAILABLE = True
+except ImportError:
+    NETWORKX_AVAILABLE = False
 
 
 @dataclass(frozen=True)
@@ -298,6 +313,101 @@ class NFA:
                 sym_str = symbol if symbol else "ε"
                 print(f"  {state.name} --{sym_str}--> {target.name}")
         print("=" * 50)
+    
+    # ==================== 可视化方法 ====================
+    
+    def _get_visualizer(self):
+        """获取可视化器实例（延迟导入避免循环依赖）"""
+        from nfa_visualizer import NFAVisualizer
+        return NFAVisualizer(self)
+    
+    def visualize(self, **kwargs):
+        """
+        使用 Matplotlib 可视化 NFA
+        
+        Args:
+            **kwargs: 传递给 visualize_matplotlib 的参数
+        """
+        if not MATPLOTLIB_AVAILABLE:
+            print("错误: 需要安装 matplotlib: pip install matplotlib")
+            return
+        if not NETWORKX_AVAILABLE:
+            print("错误: 需要安装 networkx: pip install networkx")
+            return
+        viz = self._get_visualizer()
+        viz.visualize_matplotlib(**kwargs)
+    
+    def visualize_dot(self) -> str:
+        """
+        生成 Graphviz DOT 格式字符串
+        
+        Returns:
+            DOT 格式字符串
+        """
+        viz = self._get_visualizer()
+        return viz.to_dot()
+    
+    def save_dot(self, filename: str, **kwargs):
+        """
+        保存 DOT 格式到文件
+        
+        Args:
+            filename: 输出文件名
+            **kwargs: 传递给 to_dot 的参数
+        """
+        viz = self._get_visualizer()
+        viz.save_dot(filename, **kwargs)
+    
+    def render_graphviz(self, output_file: str = "nfa_graph", 
+                        format: str = "png",
+                        engine: str = "dot",
+                        **kwargs) -> str:
+        """
+        使用 Graphviz 渲染图形
+        
+        Args:
+            output_file: 输出文件名（不含扩展名）
+            format: 输出格式 (png, svg, pdf, etc.)
+            engine: 布局引擎 (dot, neato, circo, etc.)
+            **kwargs: 传递给 to_dot 的参数
+            
+        Returns:
+            生成的文件路径
+        """
+        viz = self._get_visualizer()
+        return viz.render_graphviz(output_file, format, engine, **kwargs)
+    
+    def visualize_html(self, filename: str = "nfa_visualization.html",
+                       title: str = "NFA 可视化"):
+        """
+        生成并保存 HTML 可视化文件
+        
+        Args:
+            filename: 输出文件名
+            title: 页面标题
+        """
+        viz = self._get_visualizer()
+        viz.save_html(filename, title)
+    
+    def open_visualization(self, filename: str = "nfa_visualization.html"):
+        """
+        在浏览器中打开可视化
+        
+        Args:
+            filename: HTML 文件名
+        """
+        viz = self._get_visualizer()
+        viz.open_in_browser(filename)
+    
+    def visualize_ascii(self) -> str:
+        """
+        生成 ASCII 艺术形式的 NFA 可视化
+        
+        Returns:
+            ASCII 艺术字符串
+        """
+        viz = self._get_visualizer()
+        return viz.visualize_ascii()
 
 
 # ==================== 从正则表达式构建 NFA ====================
