@@ -526,3 +526,45 @@ class ProgramGraph:
         print("\n  迁移关系:")
         for trans in self.get_all_transitions():
             print(f"    {trans}")
+
+    # ==================== 可视化方法 ====================
+
+    def _get_visualizer(self):
+        """获取可视化器实例（延迟导入避免循环依赖）"""
+        from pg_visualizer import PGVisualizer
+        return PGVisualizer(self)
+
+    def visualize(self, **kwargs):
+        """使用 Matplotlib 可视化"""
+        viz = self._get_visualizer()
+        viz.visualize_matplotlib(**kwargs)
+
+    def visualize_dot(self, **kwargs) -> str:
+        """生成 DOT 格式字符串"""
+        viz = self._get_visualizer()
+        return viz.to_dot(**kwargs)
+
+    def save_dot(self, filename: str, **kwargs):
+        """保存 DOT 文件"""
+        viz = self._get_visualizer()
+        viz.save_dot(filename, **kwargs)
+
+    def render_graphviz(self, output_file: str = "pg_graph", **kwargs) -> str:
+        """使用 Graphviz 渲染"""
+        viz = self._get_visualizer()
+        return viz.render_graphviz(output_file, **kwargs)
+
+    def visualize_html(self, filename: str = "pg_visualization.html", **kwargs):
+        """生成 HTML 可视化"""
+        viz = self._get_visualizer()
+        viz.save_html(filename, **kwargs)
+
+    def open_visualization(self, filename: str = "pg_visualization.html"):
+        """在浏览器中打开可视化"""
+        viz = self._get_visualizer()
+        viz.open_in_browser(filename)
+
+    def visualize_ascii(self):
+        """打印 ASCII 可视化"""
+        viz = self._get_visualizer()
+        viz.print_ascii()
