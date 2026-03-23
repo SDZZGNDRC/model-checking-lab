@@ -24,6 +24,7 @@ from safety_verifier import (
     build_bad_prefix_nfa_red_must_follow_yellow,
     build_bad_prefix_nfa_no_consecutive_red
 )
+from nfa_visualizer import NFAVisualizer
 
 # 可视化输出目录
 OUTPUT_DIR = Path(__file__).parent.parent / "output" / "visualization"
@@ -142,6 +143,65 @@ def create_extended_traffic_light_ts() -> TransitionSystem:
     return ts
 
 
+def visualize_nfa_with_details(nfa: NFA, filename_prefix: str, title: str):
+    """
+    可视化 NFA 并生成多种格式
+    
+    Args:
+        nfa: 要可视化的 NFA
+        filename_prefix: 文件名前缀
+        title: 可视化标题
+    """
+    viz = NFAVisualizer(nfa)
+    
+    # 保存 DOT 格式
+    dot_path = OUTPUT_DIR / f"{filename_prefix}.dot"
+    viz.save_dot(str(dot_path))
+    
+    # 保存 HTML 格式
+    html_path = OUTPUT_DIR / f"{filename_prefix}.html"
+    viz.save_html(str(html_path), title=title)
+    
+    # 打印 ASCII 可视化
+    print(f"\n【{title} - ASCII 结构图】")
+    viz.print_ascii()
+    
+    return dot_path, html_path
+
+
+def visualize_ts_with_details(ts: TransitionSystem, filename_prefix: str, 
+                               title: str, highlight_path: list = None):
+    """
+    可视化 Transition System 并生成多种格式
+    
+    Args:
+        ts: 要可视化的 Transition System
+        filename_prefix: 文件名前缀
+        title: 可视化标题
+        highlight_path: 要高亮显示的路径（状态列表）
+    """
+    from ts_visualizer import TSVisualizer
+    
+    viz = TSVisualizer(ts)
+    
+    # 保存 DOT 格式（支持路径高亮）
+    dot_path = OUTPUT_DIR / f"{filename_prefix}.dot"
+    if highlight_path:
+        viz.save_dot(str(dot_path), highlight_path=highlight_path)
+    else:
+        viz.save_dot(str(dot_path))
+    
+    # 保存 HTML 格式
+    html_path = OUTPUT_DIR / f"{filename_prefix}.html"
+    viz.save_html(str(html_path), title=title)
+    
+    # 打印 ASCII 可视化
+    print(f"\n【{title} - ASCII 结构图】")
+    viz.print_ascii()
+    
+    return dot_path, html_path
+
+
 def demo_traffic_light_verification():
     """演示交通灯属性验证"""
     
@@ -159,19 +219,30 @@ def demo_traffic_light_verification():
     ts_correct = create_traffic_light_ts_correct()
     ts_correct.print_reachable_graph()
     
-    # 生成可视化
-    ts_correct.save_dot(OUTPUT_DIR / "lab3_traffic_correct.dot")
-    ts_correct.visualize_html(OUTPUT_DIR / "lab3_traffic_correct.html")
-    print(f"\n可视化文件已保存到 {OUTPUT_DIR}")
+    # 生成详细可视化
+    print(f"\n生成可视化文件到 {OUTPUT_DIR}")
+    visualize_ts_with_details(
+        ts_correct, 
+        "lab3_traffic_correct", 
+        "正确交通灯模型 - Transition System"
+    )
     
     # 验证属性：red 后必须紧跟 yellow
     print("\n验证属性：'red 后必须紧跟 yellow'")
     nfa_red_yellow = build_bad_prefix_nfa_red_must_follow_yellow()
     
+    # 可视化坏前缀 NFA
+    print("\n【坏前缀 NFA 可视化】")
+    visualize_nfa_with_details(
+        nfa_red_yellow,
+        "lab3_nfa_red_must_follow_yellow",
+        "坏前缀 NFA: red后必须紧跟yellow"
+    )
+    
     verifier = SafetyVerifier(ts_correct)
     result1 = verifier.verify(nfa_red_yellow, "red 后必须紧跟 yellow")
     
-    print(f"  结果: {result1}")
+    print(f"\n  结果: {result1}")
     if result1.holds:
         print("  ✓ 属性成立！")
     else:
@@ -186,16 +257,20 @@ def demo_traffic_light_verification():
     ts_violation = create_traffic_light_ts_violation()
     ts_violation.print_reachable_graph()
     
-    # 生成可视化
-    ts_violation.save_dot(OUTPUT_DIR / "lab3_traffic_violation.dot")
-    ts_violation.visualize_html(OUTPUT_DIR / "lab3_traffic_violation.html")
+    # 生成可视化（普通版本）
+    print(f"\n生成普通可视化文件到 {OUTPUT_DIR}")
+    visualize_ts_with_details(
+        ts_violation,
+        "lab3_traffic_violation",
+        "违反属性交通灯模型 - Transition System"
+    )
     
     print("\n验证属性：'red 后必须紧跟 yellow'")
     
     verifier2 = SafetyVerifier(ts_violation)
     result2 = verifier2.verify(nfa_red_yellow, "red 后必须紧跟 yellow")
     
-    print(f"  结果: {result2}")
+    print(f"\n  结果: {result2}")
     if result2.holds:
         print("  ✓ 属性成立！")
     else:
@@ -207,6 +282,15 @@ def demo_traffic_light_verification():
                 for labels in result2.counterexample_labels
             )
             print(f"  标签序列: {labels_str}")
+        
+        # 生成带反例路径高亮的可视化
+        print("\n【生成带反例路径高亮的可视化】")
+        visualize_ts_with_details(
+            ts_violation,
+            "lab3_traffic_violation_counterexample",
+            "违反属性交通灯模型 - 反例路径高亮",
+            highlight_path=result2.counterexample
+        )
     
     # ====== 测试 3：使用正则表达式构建 NFA ======
     print("\n" + "=" * 70)
@@ -239,7 +323,15 @@ def demo_traffic_light_verification():
     nfa_regex.add_transition("q2", "q2", "green")
     nfa_regex.add_transition("q2", "q2", "yellow")
     
-    print("验证正确交通灯...")
+    # 可视化手动构造的 NFA
+    print("\n【手动构造的坏前缀 NFA 可视化】")
+    visualize_nfa_with_details(
+        nfa_regex,
+        "lab3_nfa_manual_red_green",
+        "手动构造 NFA: 识别 red green 坏前缀"
+    )
+    
+    print("\n验证正确交通灯...")
     result3a = verifier.verify(nfa_regex, "不允许 red 后直接 green")
     print(f"  结果: {'✓ 通过' if result3a.holds else '✗ 失败'}")
     
@@ -248,6 +340,15 @@ def demo_traffic_light_verification():
     print(f"  结果: {'✓ 通过' if result3b.holds else '✗ 失败'}")
     if not result3b.holds:
         print(f"  反例路径: {' -> '.join(s.name for s in result3b.counterexample)}")
+        
+        # 生成带反例路径高亮的可视化
+        print("\n【生成带反例路径高亮的可视化】")
+        visualize_ts_with_details(
+            ts_violation,
+            "lab3_traffic_violation_counterexample_3b",
+            "违反属性交通灯模型 - 测试3反例路径高亮",
+            highlight_path=result3b.counterexample
+        )
     
     # ====== 测试 4：扩展交通灯模型 ======
     print("\n" + "=" * 70)
@@ -257,20 +358,78 @@ def demo_traffic_light_verification():
     ts_extended = create_extended_traffic_light_ts()
     ts_extended.print_reachable_graph()
     
-    # 生成可视化
-    ts_extended.save_dot(OUTPUT_DIR / "lab3_traffic_extended.dot")
-    ts_extended.visualize_html(OUTPUT_DIR / "lab3_traffic_extended.html")
+    # 生成详细可视化
+    print(f"\n生成可视化文件到 {OUTPUT_DIR}")
+    visualize_ts_with_details(
+        ts_extended,
+        "lab3_traffic_extended",
+        "扩展交通灯模型（带行人按钮）- Transition System"
+    )
     
     print("\n验证属性：'red 后必须紧跟 yellow'")
     verifier3 = SafetyVerifier(ts_extended)
     result4 = verifier3.verify(nfa_red_yellow, "red 后必须紧跟 yellow")
     
-    print(f"  结果: {result4}")
+    print(f"\n  结果: {result4}")
     if result4.holds:
         print("  ✓ 属性成立！")
     else:
         print("  ✗ 属性被违反！")
         print(f"  反例路径: {' -> '.join(s.name for s in result4.counterexample)}")
+        if result4.counterexample:
+            # 生成带反例路径高亮的可视化
+            print("\n【生成带反例路径高亮的可视化】")
+            visualize_ts_with_details(
+                ts_extended,
+                "lab3_traffic_extended_counterexample",
+                "扩展交通灯模型 - 反例路径高亮",
+                highlight_path=result4.counterexample
+            )
+    
+    # ====== 测试 5：对比可视化 ======
+    print("\n" + "=" * 70)
+    print("【测试 5】对比可视化：正确模型 vs 违反属性模型")
+    print("-" * 50)
+    
+    print("\n生成对比可视化...")
+    
+    # 创建简单的对比 TS（原始版本，用于对比）
+    ts_original = create_traffic_light_ts()
+    
+    # 对比可视化 - 原始模型
+    visualize_ts_with_details(
+        ts_original,
+        "lab5_traffic_original",
+        "原始交通灯模型（red->green）"
+    )
+    
+    # 对比可视化 - 正确模型
+    visualize_ts_with_details(
+        ts_correct,
+        "lab5_traffic_correct",
+        "正确交通灯模型（red->yellow->green）"
+    )
+    
+    # 对比可视化 - 违反属性模型
+    visualize_ts_with_details(
+        ts_violation,
+        "lab5_traffic_violation",
+        "违反属性交通灯模型（red直接到green）"
+    )
+    
+    # 可视化另一个坏前缀 NFA（不允许连续 red）
+    print("\n【另一个坏前缀 NFA：不允许连续 red】")
+    nfa_no_consecutive_red = build_bad_prefix_nfa_no_consecutive_red()
+    visualize_nfa_with_details(
+        nfa_no_consecutive_red,
+        "lab5_nfa_no_consecutive_red",
+        "坏前缀 NFA: 不允许连续两个red"
+    )
+    
+    # 验证扩展模型是否满足"不允许连续 red"属性
+    print("\n验证扩展模型是否满足 '不允许连续 red' 属性...")
+    result5 = verifier3.verify(nfa_no_consecutive_red, "不允许连续 red")
+    print(f"  结果: {'✓ 通过' if result5.holds else '✗ 失败'}")
     
     # 总结
     print("\n" + "=" * 70)
@@ -278,7 +437,13 @@ def demo_traffic_light_verification():
     print("=" * 70)
     print(f"1. 正确交通灯模型: {'✓ 通过' if result1.holds else '✗ 失败'}")
     print(f"2. 违反属性模型:   {'✓ 通过（检测到违反）' if not result2.holds else '✗ 未检测到'}")
-    print(f"3. 扩展模型:       {'✓ 通过' if result4.holds else '✗ 失败'}")
+    print(f"3. 扩展模型(属性1): {'✓ 通过' if result4.holds else '✗ 失败'}")
+    print(f"4. 扩展模型(属性2): {'✓ 通过' if result5.holds else '✗ 失败'}")
+    print("\n生成的可视化文件:")
+    print(f"  - {OUTPUT_DIR}/lab3_*.dot (DOT格式)")
+    print(f"  - {OUTPUT_DIR}/lab3_*.html (HTML交互式)")
+    print(f"  - {OUTPUT_DIR}/lab5_*.dot (DOT格式 - 对比测试)")
+    print(f"  - {OUTPUT_DIR}/lab5_*.html (HTML交互式 - 对比测试)")
     print("\n实验三完成！")
 
 
