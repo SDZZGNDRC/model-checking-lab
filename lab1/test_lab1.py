@@ -15,9 +15,41 @@ sys.path.insert(0, __file__.rsplit('\\', 1)[0])
 
 from transition_system import TransitionSystem, State
 from peterson_example import create_simplified_peterson, PetersonTS, verify_mutual_exclusion
+from parallel_composition import create_peterson_process
+from program_graph import ProgramGraph, Action
 
 # 可视化输出目录
 OUTPUT_DIR = Path(__file__).parent.parent / "output" / "visualization"
+
+
+def save_pg_visualization(pg, name_prefix: str):
+    """保存程序图可视化文件"""
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # 保存 DOT 文件
+    dot_file = OUTPUT_DIR / f"{name_prefix}_pg.dot"
+    pg.save_dot(str(dot_file))
+    
+    # 保存 HTML 文件
+    html_file = OUTPUT_DIR / f"{name_prefix}_pg.html"
+    pg.visualize_html(str(html_file))
+    
+    print(f"  程序图可视化已保存: {name_prefix}_pg.dot/html")
+
+
+def save_ts_visualization(ts, name_prefix: str):
+    """保存迁移系统可视化文件"""
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # 保存 DOT 文件
+    dot_file = OUTPUT_DIR / f"{name_prefix}_ts.dot"
+    ts.save_dot(str(dot_file))
+    
+    # 保存 HTML 文件
+    html_file = OUTPUT_DIR / f"{name_prefix}_ts.html"
+    ts.visualize_html(str(html_file))
+    
+    print(f"  迁移系统可视化已保存: {name_prefix}_ts.dot/html")
 
 
 def test_basic_state_management():
@@ -220,10 +252,7 @@ def test_peterson_simplified():
     assert result, "简化版 Peterson 算法应满足互斥性质"
     
     # 生成可视化文件
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    ts.save_dot(OUTPUT_DIR / "test_peterson_simplified.dot")
-    ts.visualize_html(OUTPUT_DIR / "test_peterson_simplified.html")
-    print(f"  可视化文件已保存到 {OUTPUT_DIR}")
+    save_ts_visualization(ts, "lab1_peterson_simplified")
     
     print("  ✓ 可达状态数与手工计算一致")
     print("  ✓ 互斥性质验证通过")
@@ -248,10 +277,13 @@ def test_peterson_full():
     assert result, "完整版 Peterson 算法应满足互斥性质"
     
     # 生成可视化文件
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    ts.save_dot(OUTPUT_DIR / "test_peterson_full.dot")
-    ts.visualize_html(OUTPUT_DIR / "test_peterson_full.html")
-    print(f"  可视化文件已保存到 {OUTPUT_DIR}")
+    save_ts_visualization(ts, "lab1_peterson_full")
+    
+    # 同时生成程序图可视化（Peterson 进程）
+    p0 = create_peterson_process(0)
+    p1 = create_peterson_process(1)
+    save_pg_visualization(p0, "lab1_peterson_p0")
+    save_pg_visualization(p1, "lab1_peterson_p1")
     
     print("  ✓ 完整模型构建成功")
     print("  ✓ 互斥性质验证通过")

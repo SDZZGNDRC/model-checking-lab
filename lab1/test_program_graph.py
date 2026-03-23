@@ -26,6 +26,39 @@ from parallel_composition import (
 )
 from transition_system import TransitionSystem
 
+# 可视化输出目录
+OUTPUT_DIR = Path(__file__).parent.parent / "output" / "visualization"
+
+
+def save_pg_visualization(pg, name_prefix: str):
+    """保存程序图可视化文件"""
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # 保存 DOT 文件
+    dot_file = OUTPUT_DIR / f"{name_prefix}_pg.dot"
+    pg.save_dot(str(dot_file))
+    
+    # 保存 HTML 文件
+    html_file = OUTPUT_DIR / f"{name_prefix}_pg.html"
+    pg.visualize_html(str(html_file))
+    
+    print(f"  程序图可视化已保存: {name_prefix}_pg.dot/html")
+
+
+def save_ts_visualization(ts, name_prefix: str):
+    """保存迁移系统可视化文件"""
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # 保存 DOT 文件
+    dot_file = OUTPUT_DIR / f"{name_prefix}_ts.dot"
+    ts.save_dot(str(dot_file))
+    
+    # 保存 HTML 文件
+    html_file = OUTPUT_DIR / f"{name_prefix}_ts.html"
+    ts.visualize_html(str(html_file))
+    
+    print(f"  迁移系统可视化已保存: {name_prefix}_ts.dot/html")
+
 
 # ==================== 程序图基础测试 ====================
 
@@ -271,7 +304,13 @@ class TestUnfoldToTS:
         action = Action("x=1", {"x": "1"})
         pg.add_transition("A", "B", action)
         
+        # 保存程序图可视化
+        save_pg_visualization(pg, "test_simple_unfold")
+        
         ts = pg.unfold_to_ts()
+        
+        # 保存迁移系统可视化
+        save_ts_visualization(ts, "test_simple_unfold")
         
         # 应该有初始状态
         init_states = ts.get_initial_states()
@@ -298,7 +337,14 @@ class TestUnfoldToTS:
         action2 = Action("to_C", {})
         pg.add_transition("A", "C", action2, "x == 1")
         
+        # 保存程序图可视化
+        save_pg_visualization(pg, "test_unfold_condition")
+        
         ts = pg.unfold_to_ts()
+        
+        # 保存迁移系统可视化
+        save_ts_visualization(ts, "test_unfold_condition")
+        
         reachable = ts.compute_reachable_states()
         
         # 初始 x=0，应该只能到 B
@@ -317,7 +363,14 @@ while x < 3:
         # 扩展域以包含所有可能值
         pg.declare_variable("x", {0, 1, 2, 3}, 0)
         
+        # 保存程序图可视化
+        save_pg_visualization(pg, "test_unfold_counter")
+        
         ts = pg.unfold_to_ts()
+        
+        # 保存迁移系统可视化
+        save_ts_visualization(ts, "test_unfold_counter")
+        
         reachable = ts.compute_reachable_states()
         
         # 应该有多个可达状态
@@ -334,7 +387,13 @@ while x < 3:
         action = Action("to_B", {})
         pg.add_transition("A", "B", action)
         
+        # 保存程序图可视化
+        save_pg_visualization(pg, "test_unfold_labels")
+        
         ts = pg.unfold_to_ts()
+        
+        # 保存迁移系统可视化
+        save_ts_visualization(ts, "test_unfold_labels")
         
         # 检查标签传递
         for state in ts.get_all_states():
@@ -366,7 +425,14 @@ class TestParallelComposition:
         pg2.declare_variable("y", {0, 1}, 0)
         pg2.add_transition("C", "D", Action("y=1", {"y": "1"}))
         
+        # 保存原始程序图可视化
+        save_pg_visualization(pg1, "test_parallel_pg1")
+        save_pg_visualization(pg2, "test_parallel_pg2")
+        
         composed = parallel_compose(pg1, pg2)
+        
+        # 保存组合后的程序图可视化
+        save_pg_visualization(composed, "test_parallel_composed")
         
         # 位置数应该是 2 * 2 = 4
         assert len(composed.get_locations()) == 4
@@ -393,7 +459,14 @@ class TestParallelComposition:
         pg2.add_transition("C", "D", Action("y=1", {"y": "1"}))
         
         composed = parallel_compose(pg1, pg2)
+        
+        # 保存组合程序图可视化
+        save_pg_visualization(composed, "test_interleaving_pg")
+        
         ts = composed.unfold_to_ts()
+        
+        # 保存迁移系统可视化
+        save_ts_visualization(ts, "test_interleaving")
         
         reachable = ts.compute_reachable_states()
         reachable_names = {s.name for s in reachable}
@@ -479,7 +552,14 @@ class TestPetersonAlgorithm:
         p0 = create_peterson_process(0)
         p1 = create_peterson_process(1)
         
+        # 保存单个进程可视化
+        save_pg_visualization(p0, "test_peterson_p0")
+        save_pg_visualization(p1, "test_peterson_p1")
+        
         composed = parallel_compose(p0, p1, "Peterson")
+        
+        # 保存组合程序图可视化
+        save_pg_visualization(composed, "test_peterson_composed")
         
         # 检查组合后的位置数
         # 5 * 5 = 25 个组合位置
@@ -494,6 +574,10 @@ class TestPetersonAlgorithm:
     def test_peterson_mutual_exclusion(self):
         """测试 Peterson 算法互斥性质"""
         ts = create_peterson_ts()
+        
+        # 保存迁移系统可视化
+        save_ts_visualization(ts, "test_peterson_me")
+        
         reachable = ts.compute_reachable_states()
         
         # 验证没有同时进入临界区的状态
@@ -562,8 +646,14 @@ while x < 2:
         pg.declare_variable("x", {0, 1, 2}, 0)
         pg.declare_variable("y", {0, 1}, 0)
         
+        # 保存程序图可视化
+        save_pg_visualization(pg, "test_pipeline_pg")
+        
         # 展开为 TS
         ts = pg.unfold_to_ts()
+        
+        # 保存迁移系统可视化
+        save_ts_visualization(ts, "test_pipeline_ts")
         
         # 验证基本属性
         assert ts.get_initial_states()
@@ -579,7 +669,13 @@ while x < 2:
         pg.declare_variable("x", {0, 1}, 0)
         pg.add_transition("A", "B", Action("x=1", {"x": "1"}))
         
+        # 保存程序图可视化
+        save_pg_visualization(pg, "test_viz_compat_pg")
+        
         ts = pg.unfold_to_ts()
+        
+        # 保存迁移系统可视化
+        save_ts_visualization(ts, "test_viz_compat_ts")
         
         # 测试可以生成 DOT 格式
         dot = ts.visualize_dot()
@@ -597,7 +693,14 @@ while x < 2:
         pg.add_transition("A", "B", Action("a", {"x": "1"}))
         pg.add_transition("B", "C", Action("b", {}))
         
+        # 保存程序图可视化
+        save_pg_visualization(pg, "test_stats_pg")
+        
         ts = pg.unfold_to_ts()
+        
+        # 保存迁移系统可视化
+        save_ts_visualization(ts, "test_stats_ts")
+        
         stats = ts.get_statistics()
         
         assert "total_states" in stats
